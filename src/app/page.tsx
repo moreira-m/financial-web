@@ -11,7 +11,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 1. Define as datas padrão apenas no navegador (Client-side)
   useEffect(() => {
     const date = new Date();
     const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
@@ -22,7 +21,6 @@ export default function Home() {
     setEndDate(lastDay);
   }, []);
 
-  // 2. Busca os dados sempre que as datas mudarem (e não estiverem vazias)
   useEffect(() => {
     if (!startDate || !endDate) return;
 
