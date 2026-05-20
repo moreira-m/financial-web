@@ -22,5 +22,11 @@ export const apiService = {
     //busca resumo financeiro
     getDashboardSummary: (startDate: string, endDate: string): Promise<DashboardSummary> => {
         return apiFetch<DashboardSummary>(`/dashboard/summary?startDate=${startDate}&endDate=${endDate}`);
-    }
+    },
+
+    importAccounts: async (itemId: string): Promise<void> => {
+        return apiFetch<void>(`/accounts/import/${itemId}`, {
+            method: 'POST',
+        });
+    },
 };
