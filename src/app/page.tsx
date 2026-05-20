@@ -1,66 +1,88 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import { useState, useEffect } from "react";
+import { apiService } from "../services/apiServices";
+import { DashboardSummary } from "../types";
 
 export default function Home() {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // 1. Define as datas padrão apenas no navegador (Client-side)
+  useEffect(() => {
+    const date = new Date();
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
+    
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStartDate(firstDay);
+    setEndDate(lastDay);
+  }, []);
+
+  // 2. Busca os dados sempre que as datas mudarem (e não estiverem vazias)
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+
+    async function loadSummary() {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await apiService.getDashboardSummary(startDate, endDate);
+        setSummary(data);
+      } catch (err) {
+        console.error(err);
+        setError("Não foi possível carregar o resumo do período.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSummary();
+  }, [startDate, endDate]);
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main style={{ padding: "20px", fontFamily: "sans-serif" }}>
+      <h1>Painel de Controle</h1>
+
+      <section style={{ marginBottom: "20px" }}>
+        <h3>Filtro de Período</h3>
+        <label>
+          Início: 
+          <input 
+            type="date" 
+            value={startDate} 
+            onChange={(e) => setStartDate(e.target.value)} 
+            style={{ marginLeft: "10px", marginRight: "20px" }}
+          />
+        </label>
+        <label>
+          Fim: 
+          <input 
+            type="date" 
+            value={endDate} 
+            onChange={(e) => setEndDate(e.target.value)} 
+            style={{ marginLeft: "10px" }}
+          />
+        </label>
+      </section>
+
+      {loading && <p>Carregando resumo...</p>}
+      
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      {!loading && !error && summary && (
+        <section>
+          <h2>Resumo Financeiro</h2>
+          <ul>
+            <li><strong>Receitas:</strong> R$ {summary.totalIncomes.toFixed(2)}</li>
+            <li><strong>Despesas:</strong> R$ {summary.totalExpenses.toFixed(2)}</li>
+            <li><strong>Saldo:</strong> R$ {summary.balance.toFixed(2)}</li>
+          </ul>
+        </section>
+      )}
+    </main>
   );
 }
