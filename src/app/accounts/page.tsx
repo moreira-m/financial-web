@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { apiService } from "../../services/apiServices"; // Verifique se o nome do arquivo é apiService ou apiServices
+import { useState, useEffect, useCallback } from "react";
+import { apiService } from "../../services/apiServices";
 import { Account } from "../../types";
 
 export default function AccountsPage() {
@@ -13,115 +13,124 @@ export default function AccountsPage() {
   const [itemId, setItemId] = useState("");
   const [isImporting, setIsImporting] = useState(false);
 
-  const loadAccounts = async () => {
+  const loadAccounts = useCallback(async () => {
     setLoading(true);
     try {
+      console.log(">>> [FRONT] Solicitando lista de contas ao backend...");
       const data = await apiService.getAccounts();
-      setAccounts(data);
-    } catch (err) {
-      console.error(err);
-      setError("Erro ao carregar as contas.");
+      console.log(">>> [FRONT] Contas recebidas:", data);
+      setAccounts(Array.isArray(data) ? data : []);
+      setError("");
+    } catch (err: any) {
+      console.error(">>> [FRONT] Erro ao carregar contas:", err);
+      setError("Falha na conexão com o servidor de dados.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAccounts();
-  }, []);
+  }, [loadAccounts]);
 
   async function handleSync(pluggyAccountId: string) {
     try {
       setSyncingId(pluggyAccountId);
       await apiService.syncAccount(pluggyAccountId);
-      alert("Sincronização concluída com sucesso!");
+      await loadAccounts(); 
     } catch (err) {
       console.error(err);
-      alert("Erro ao sincronizar a conta.");
     } finally {
       setSyncingId(null);
     }
   }
 
   async function handleImport() {
-    if (!itemId) {
-      alert("Por favor, insira o Item ID da Pluggy.");
-      return;
-    }
+    if (!itemId) return;
     
     try {
       setIsImporting(true);
+      setError("");
+      console.log(">>> [FRONT] Iniciando importação do Item:", itemId);
       await apiService.importAccounts(itemId);
-      alert("Contas importadas com sucesso!");
+      console.log(">>> [FRONT] Importação enviada com sucesso!");
       setItemId(""); 
-      loadAccounts();
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao importar as contas.");
+      
+      setTimeout(() => {
+        loadAccounts();
+      }, 1500);
+      
+    } catch (err: any) {
+      console.error(">>> [FRONT] Erro na importação:", err);
+      setError("Erro ao processar importação. Verifique o console do backend.");
     } finally {
       setIsImporting(false);
     }
   }
 
   return (
-    <main style={{ padding: "20px", fontFamily: "sans-serif" }}>
-      <h1>Contas Bancárias</h1>
-
-      <section style={{ marginBottom: "30px", padding: "15px", border: "1px solid #ddd", borderRadius: "8px" }}>
-        <h3>Importar Novas Contas da Pluggy</h3>
-        <input 
-          type="text" 
-          placeholder="Cole seu Item ID aqui" 
-          value={itemId}
-          onChange={(e) => setItemId(e.target.value)}
-          style={{ padding: "8px", width: "300px", marginRight: "10px" }}
-        />
-        <button 
-          onClick={handleImport}
-          disabled={isImporting}
-          style={{ padding: "8px 16px", cursor: "pointer" }}
-        >
-          {isImporting ? "Importando..." : "Importar Contas"}
-        </button>
+    <>
+      <section className="card" style={{ gridColumn: 'span 12', marginBottom: '1rem' }}>
+        <h3>Importar Novas Contas</h3>
+        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+          <input 
+            type="text" 
+            className="blueprint-input"
+            placeholder="Cole seu Item ID aqui" 
+            value={itemId}
+            onChange={(e) => setItemId(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <button 
+            className="blueprint-button"
+            onClick={handleImport}
+            disabled={isImporting}
+          >
+            {isImporting ? "[IMPORTANDO...]" : "[IMPORTAR_CONTAS]"}
+          </button>
+        </div>
       </section>
 
-      {loading && <p>Carregando contas...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {!loading && !error && accounts.length === 0 && (
-        <p>Nenhuma conta encontrada no banco de dados local.</p>
+      {loading && accounts.length === 0 && (
+        <div style={{ gridColumn: 'span 12', padding: '1rem' }}>[CARREGANDO_CONTAS_DO_SISTEMA...]</div>
+      )}
+      
+      {error && (
+        <div className="card" style={{ gridColumn: 'span 12', color: '#ff4d4d', borderColor: '#ff4d4d' }}>
+          {error}
+        </div>
       )}
 
-      {!loading && !error && accounts.length > 0 && (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {accounts.map((account) => (
-            <li 
-              key={account.id} 
-              style={{ 
-                border: "1px solid #ccc", 
-                padding: "10px", 
-                marginBottom: "10px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderRadius: "4px"
-              }}
-            >
-              <div>
-                <strong>{account.name}</strong> - {account.type}
+      {!loading && accounts.length === 0 && !error && (
+        <div className="card" style={{ gridColumn: 'span 12', textAlign: 'center', opacity: 0.6 }}>
+          Nenhuma conta encontrada no banco de dados local. <br/>
+          Cole um Item ID válido acima para começar.
+        </div>
+      )}
+
+      {accounts.length > 0 && (
+        <div className="accounts-section" style={{ gridColumn: 'span 12' }}>
+          <div className="accounts-grid">
+            {accounts.map((account) => (
+              <div key={account.id} className="account-card">
+                <div className="account-info">
+                  <div className="account-name">{account.name}</div>
+                  <div className="account-type">{account.type}</div>
+                  <div style={{ fontSize: '0.6rem', opacity: 0.5, marginTop: '5px' }}>ID: {account.pluggyAccountId}</div>
+                </div>
+                <button 
+                  className="blueprint-button" 
+                  onClick={() => handleSync(account.pluggyAccountId)}
+                  disabled={syncingId === account.pluggyAccountId}
+                  style={{ fontSize: '0.6rem', padding: '4px 8px', marginTop: '10px' }}
+                >
+                  {syncingId === account.pluggyAccountId ? "[SYNCING...]" : "[SYNC_DATA]"}
+                </button>
               </div>
-              <button 
-                onClick={() => handleSync(account.pluggyAccountId)}
-                disabled={syncingId === account.pluggyAccountId}
-                style={{ padding: "8px 16px", cursor: "pointer" }}
-              >
-                {syncingId === account.pluggyAccountId ? "Sincronizando..." : "Sincronizar"}
-              </button>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        </div>
       )}
-    </main>
+    </>
   );
 }
