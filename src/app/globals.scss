@@ -1,0 +1,108 @@
+$blueprint-bg: #3C57B2;
+$blueprint-grid: rgba(255, 255, 255, 0.12);
+$blueprint-line: rgba(255, 255, 255, 0.4);
+$blueprint-text: #ffffff;
+$blueprint-accent: #ffffff;
+$blueprint-highlight: #ffffff;
+$blueprint-red: #ffffff;
+$blueprint-green: #ffffff;
+
+@mixin technical-border {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  position: relative;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #ffffff;
+  }
+
+  &::before { top: -3px; left: -3px; border-right: 0; border-bottom: 0; }
+  &::after { bottom: -3px; right: -3px; border-left: 0; border-top: 0; }
+}
+
+:root {
+  --font-mono: var(--font-geist-mono), monospace;
+  --font-sans: var(--font-geist-sans), sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background-color: $blueprint-bg;
+  color: $blueprint-text;
+  font-family: var(--font-sans);
+  background-image: 
+    linear-gradient($blueprint-grid 1px, transparent 1px),
+    linear-gradient(90deg, $blueprint-grid 1px, transparent 1px);
+  background-size: 30px 30px;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $blueprint-accent;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  &::before {
+    content: '[SEC_01]';
+    font-size: 0.6rem;
+    opacity: 0.5;
+  }
+}
+
+.dashboard-container {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.card {
+  @include technical-border;
+}
+
+.blueprint-input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid $blueprint-line;
+  color: $blueprint-text;
+  padding: 0.5rem;
+  font-family: var(--font-mono);
+  outline: none;
+  
+  &:focus {
+    border-color: $blueprint-accent;
+  }
+}
+
+.blueprint-button {
+  background: transparent;
+  border: 1px solid $blueprint-accent;
+  color: $blueprint-accent;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba($blueprint-accent, 0.1);
+    box-shadow: 0 0 10px rgba($blueprint-accent, 0.3);
+  }
+}

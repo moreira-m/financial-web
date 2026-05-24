@@ -1,0 +1,276 @@
+@use 'globals' as *;
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: auto auto 1fr;
+  gap: 1.5rem;
+  padding: 1rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  min-height: 100vh;
+
+  header {
+    grid-column: span 12;
+    border-bottom: 2px solid #ffffff;
+    padding-bottom: 1rem;
+    position: relative;
+
+    .header-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    
+    .title-group {
+      h1 { margin: 0; font-weight: 900; color: #ffffff; border: none; padding: 0; }
+      span { font-family: var(--font-mono); font-size: 0.7rem; opacity: 0.6; color: #ffffff; }
+    }
+
+    .desktop-nav {
+      display: flex;
+      gap: 2rem;
+      font-family: var(--font-mono);
+      
+      @media (max-width: 768px) {
+        display: none;
+      }
+
+      a {
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        font-weight: 400;
+        letter-spacing: 1px;
+        position: relative;
+        padding: 5px 0;
+        color: #ffffff;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 0;
+          height: 1px;
+          background: #ffffff;
+          transition: width 0.3s;
+        }
+
+        &:hover {
+          font-weight: 700;
+          &::after { width: 100%; }
+        }
+
+        &.active {
+          font-weight: 900;
+          &::after { width: 100%; height: 2px; }
+        }
+      }
+    }
+
+    .status-indicator {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 4px 10px;
+      font-weight: 700;
+      color: #ffffff;
+
+      &.desktop-only {
+        @media (max-width: 1024px) {
+          display: none;
+        }
+      }
+    }
+
+    .menu-toggle {
+      display: none;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 8px;
+      cursor: pointer;
+      
+      @media (max-width: 768px) {
+        display: block;
+      }
+
+      .hamburger {
+        width: 20px;
+        height: 14px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        span {
+          display: block;
+          width: 100%;
+          height: 2px;
+          background: #ffffff;
+          transition: all 0.3s ease;
+        }
+
+        &.open {
+          span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+          span:nth-child(2) { opacity: 0; }
+          span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+        }
+      }
+    }
+
+    .mobile-nav {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.5rem 0 0.5rem 0;
+      font-family: var(--font-mono);
+      
+      @media (max-width: 768px) {
+        display: none;
+        &.open {
+          display: flex;
+          animation: slideDown 0.3s ease-out;
+        }
+      }
+
+      a {
+        color: #ffffff;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        font-weight: 400;
+        padding: 8px;
+        border-left: 2px solid transparent;
+        
+        &.active {
+          font-weight: 900;
+          border-left: 2px solid #ffffff;
+          background: rgba(255, 255, 255, 0.1);
+        }
+      }
+    }
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .filter-section {
+    grid-column: span 12;
+    @include technical-border;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    background: rgba($blueprint-accent, 0.05);
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      label {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: $blueprint-accent;
+      }
+    }
+  }
+
+  .summary-section {
+    grid-column: span 4;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .summary-item {
+      @include technical-border;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      .label {
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        font-size: 0.9rem;
+      }
+      
+      .value {
+        font-family: var(--font-mono);
+        font-size: 1.2rem;
+        
+        &.income { font-weight: 800; }
+        &.expense { font-weight: 300; }
+        &.balance { font-weight: 900; border-bottom: 1px solid $blueprint-text; }
+      }
+    }
+  }
+
+  .accounts-section {
+    grid-column: span 8;
+    @include technical-border;
+    
+    .accounts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .account-card {
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.08);
+      
+      .account-name { font-weight: 700; margin-bottom: 0.5rem; }
+      .account-type { font-family: var(--font-mono); font-size: 0.7rem; opacity: 0.8; font-weight: 400; }
+    }
+  }
+
+  .transactions-section {
+    grid-column: span 12;
+    @include technical-border;
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      
+      th {
+        text-align: left;
+        color: #ffffff;
+        border-bottom: 2px solid #ffffff;
+        padding: 0.8rem;
+        text-transform: uppercase;
+        font-weight: 900;
+      }
+      
+      td {
+        padding: 0.8rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        font-weight: 400;
+      }
+      
+      tr:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      
+      .amount {
+        text-align: right;
+        &.positive { font-weight: 800; }
+        &.negative { font-weight: 300; opacity: 0.9; }
+      }
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard {
+    .summary-section, .accounts-section {
+      grid-column: span 12;
+    }
+  }
+}
