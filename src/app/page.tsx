@@ -1,21 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { apiService } from "../services/apiServices";
-import { Account, Transaction, DashboardSummary } from "../types";
+import { Account, Transaction, DashboardSummary, Category } from "../types";
 import { Summary } from "../components/Summary";
 import { AccountList } from "../components/AccountList";
 import { TransactionList } from "../components/TransactionList";
 import { PeriodFilter } from "../components/PeriodFilter";
+import { DashboardFilters } from "../components/DashboardFilters";
+import { CategoryManagerModal } from "../components/CategoryManagerModal";
 import "./dashboard.scss";
 
 export default function Home() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,15 +42,16 @@ export default function Home() {
         setLoading(true);
         setError("");
         
-        const [summaryData, accountsData, transactionsData] = await Promise.all([
-          apiService.getDashboardSummary(startDate, endDate),
+        const [accountsData, transactionsData, categoriesData] = await Promise.all([
           apiService.getAccounts(),
-          apiService.getTransactions(startDate, endDate)
+          apiService.getTransactions(startDate, endDate),
+          apiService.getCategories()
         ]);
 
-        setSummary(summaryData);
         setAccounts(accountsData);
         setTransactions(transactionsData);
+        setCategories(categoriesData);
+        setSelectedCategoryIds(categoriesData.map(c => c.id));
       } catch (err) {
         console.error(err);
         setError("Falha na sincronização de dados [ERR_FETCH_FAILED]");
@@ -61,13 +67,10 @@ export default function Home() {
     try {
       setLoading(true);
       await apiService.syncAccount(pluggyAccountId);
-      // Re-load data after sync
-      const [summaryData, accountsData, transactionsData] = await Promise.all([
-        apiService.getDashboardSummary(startDate, endDate),
+      const [accountsData, transactionsData] = await Promise.all([
         apiService.getAccounts(),
         apiService.getTransactions(startDate, endDate)
       ]);
-      setSummary(summaryData);
       setAccounts(accountsData);
       setTransactions(transactionsData);
     } catch (err) {
@@ -77,6 +80,60 @@ export default function Home() {
       setLoading(false);
     }
   }
+
+  const handleCreateCategory = async (category: Omit<Category, "id">) => {
+    const newCategory = await apiService.createCategory(category);
+    setCategories([...categories, newCategory]);
+    setSelectedCategoryIds([...selectedCategoryIds, newCategory.id]);
+  };
+
+  const handleUpdateCategory = async (id: number, categoryDetails: Omit<Category, "id">) => {
+    const updated = await apiService.updateCategory(id, categoryDetails);
+    setCategories(categories.map(c => c.id === id ? updated : c));
+  };
+
+  const handleDeleteCategory = async (id: number) => {
+    await apiService.deleteCategory(id);
+    setCategories(categories.filter(c => c.id !== id));
+    setSelectedCategoryIds(selectedCategoryIds.filter(catId => catId !== id));
+    setTransactions(transactions.map(t => t.categoryId === id ? { ...t, categoryId: undefined, categoryName: undefined, categoryColor: undefined } : t));
+  };
+
+  const handleUpdateTransactionCategory = async (transactionId: number, categoryId: number | null) => {
+    const updatedTransaction = await apiService.updateTransactionCategory(transactionId, categoryId);
+    setTransactions(transactions.map(t => t.id === transactionId ? updatedTransaction : t));
+  };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      if (t.categoryId != null) {
+        return selectedCategoryIds.includes(t.categoryId);
+      }
+      return true; // Se não tem categoria, mostra sempre
+    });
+  }, [transactions, selectedCategoryIds]);
+
+  const summary = useMemo<DashboardSummary>(() => {
+    let totalIncomes = 0;
+    let totalExpenses = 0;
+
+    filteredTransactions.forEach(t => {
+      const cat = categories.find(c => c.id === t.categoryId);
+      if (cat && !cat.includeInDashboard) return;
+
+      if (t.amount > 0) {
+        totalIncomes += t.amount;
+      } else {
+        totalExpenses += Math.abs(t.amount);
+      }
+    });
+
+    return {
+      totalIncomes,
+      totalExpenses,
+      balance: totalIncomes - totalExpenses
+    };
+  }, [filteredTransactions, categories]);
 
   return (
     <>
@@ -92,12 +149,32 @@ export default function Home() {
           {error}
         </div>
       )}
+      
+      <DashboardFilters 
+        categories={categories}
+        selectedCategoryIds={selectedCategoryIds}
+        onChange={setSelectedCategoryIds}
+        onManageCategories={() => setIsCategoryModalOpen(true)}
+      />
 
-      {summary && <Summary summary={summary} />}
+      <Summary summary={summary} />
       
       <AccountList accounts={accounts} onSync={handleSync} />
 
-      <TransactionList transactions={transactions} />
+      <TransactionList 
+        transactions={filteredTransactions} 
+        categories={categories}
+        onUpdateCategory={handleUpdateTransactionCategory}
+      />
+      
+      <CategoryManagerModal 
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        categories={categories}
+        onCreate={handleCreateCategory}
+        onUpdate={handleUpdateCategory}
+        onDelete={handleDeleteCategory}
+      />
     </>
   );
 }
