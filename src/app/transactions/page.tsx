@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { apiService } from "../../services/apiServices";
 import { Transaction } from "../../types";
 import { PeriodFilter } from "../../components/PeriodFilter";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 
 export default function TransactionsPage() {
   const [startDate, setStartDate] = useState("");
@@ -11,6 +12,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { formatValue } = usePrivacy();
 
   useEffect(() => {
     const date = new Date();
@@ -75,7 +77,7 @@ export default function TransactionsPage() {
                 <td>{t.description}</td>
                 <td>{t.accountName}</td>
                 <td className={`amount ${t.amount >= 0 ? 'positive' : 'negative'}`}>
-                  R$ {t.amount.toFixed(2)}
+                  {formatValue(t.amount)}
                 </td>
               </tr>
             ))}

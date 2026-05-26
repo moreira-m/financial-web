@@ -1,5 +1,6 @@
 import { Transaction, Category } from "../types";
 import { CategorySelector } from "./CategorySelector";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -8,6 +9,8 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ transactions, categories, onUpdateCategory }: TransactionListProps) {
+  const { formatValue } = usePrivacy();
+
   return (
     <div className="transactions-section">
       <h3>Fluxo de Transações</h3>
@@ -35,7 +38,7 @@ export function TransactionList({ transactions, categories, onUpdateCategory }: 
                 />
               </td>
               <td className={`amount ${t.amount >= 0 ? 'positive' : 'negative'}`}>
-                R$ {t.amount.toFixed(2)}
+                {formatValue(t.amount)}
               </td>
             </tr>
           ))}
