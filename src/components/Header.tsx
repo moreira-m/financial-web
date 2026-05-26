@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
+import { Eye, EyeOff } from "lucide-react";
+import { usePrivacy } from "@/contexts/PrivacyContext";
+
 interface HeaderProps {
   loading?: boolean;
 }
@@ -11,6 +14,7 @@ interface HeaderProps {
 export function Header({ loading }: HeaderProps) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { showValues, toggleValues } = usePrivacy();
 
   // Map pathnames to page titles
   const getPageTitle = (path: string) => {
@@ -48,8 +52,22 @@ export function Header({ loading }: HeaderProps) {
           <Link href="/transactions" className={pathname === "/transactions" ? "active" : ""}>[ TRANSACTIONS ]</Link>
         </nav>
 
-        <div className="status-indicator desktop-only">
-          {loading ? "PROCESSANDO..." : "SISTEMA OPERACIONAL"}
+        <div className="status-indicator desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button 
+            onClick={toggleValues}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'var(--blueprint-text)', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            title={showValues ? "Ocultar valores" : "Mostrar valores"}
+          >
+            {showValues ? <Eye size={20} /> : <EyeOff size={20} />}
+          </button>
+          <span>{loading ? "PROCESSANDO..." : "SISTEMA OPERACIONAL"}</span>
         </div>
       </div>
 
@@ -57,6 +75,26 @@ export function Header({ loading }: HeaderProps) {
         <Link href="/" onClick={() => setIsMenuOpen(false)} className={pathname === "/" ? "active" : ""}>[ DASHBOARD ]</Link>
         <Link href="/accounts" onClick={() => setIsMenuOpen(false)} className={pathname === "/accounts" ? "active" : ""}>[ ACCOUNTS ]</Link>
         <Link href="/transactions" onClick={() => setIsMenuOpen(false)} className={pathname === "/transactions" ? "active" : ""}>[ TRANSACTIONS ]</Link>
+        
+        {/* Mobile Toggle */}
+        <button 
+          onClick={toggleValues}
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: 'var(--blueprint-text)', 
+            cursor: 'pointer',
+            padding: '1rem',
+            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontFamily: 'var(--font-mono)'
+          }}
+        >
+          {showValues ? <Eye size={16} /> : <EyeOff size={16} />}
+          [ {showValues ? "OCULTAR VALORES" : "MOSTRAR VALORES"} ]
+        </button>
       </nav>
     </header>
   );
